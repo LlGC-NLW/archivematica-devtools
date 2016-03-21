@@ -43,6 +43,7 @@ TOOLS PROVIDED
 * create-many-transfers: Stress test an Archivematica instance by starting many transfers at once.
 * extract-mets-files-from-aips: Extract METS files from all AIPs in a given path.
 * gearman-info: Lists all running Gearman workers.
+* import-pronom-ids: Updates FPR information in Archivematica install from a PRONOM XML file. Can also create a SQL migration for the changes.
 * mcp-rpc-cli: Simple commandline interface to monitor running Archivematica tasks and select processing choices.
 * rebuild-elasticsearch tools: Various tools to rebuild specific Elasticsearch indices.
 * reindex-index-data: Delete and recreate the AIP or Transfer index, reindexing all existing records.
@@ -99,3 +100,11 @@ This is useful if the mapping has changed in an incompatible way but the existin
 Depending on the size of the index, a large amount of memory may be consumed.
 
 There is one positional argument which specifies which index to recreate: `transfers` or `aips`. Additionally, the optional parameter `--chunk-size` allows the user to decide how many documents are sent to Elasticsearch in one chunk. This can help to circumvent timeout issues when the documents are very big.
+
+### import-pronom-ids
+
+import-pronom-ids takes a FIDO PRONOM XML file, and populates the FPR with any new formats not yet present in the database.
+"New" formats are defined as formats whose PUID is not present in any FormatVersion, regardless of whether anything with a description of that name is present.
+
+If the FPR admin being used has debug enabled, then this will also output the SQL statements used to insert entries into the database to stdout.
+This makes it possible to generate a new SQL dump which can be used to reimport those formats at a later point in time without running this script - for instance, to upgrade an Archivematica's FPR install without hitting the internet.

@@ -44,6 +44,7 @@ if __name__ == '__main__':
         user_name=args.user,
         user_pass=args.passwd,
         keep_history=True,
+        # http_impl=sword2.http_layer.UrlLib2Layer(),  # This causes the deposit receipt to return the wrong URLs
     )
 
     # Get service doc
@@ -58,7 +59,7 @@ if __name__ == '__main__':
 
     # Create item by depositing AtoM doc
     entry = sword2.Entry(
-        title='Artefactual test',
+        title=os.path.basename(args.content),
         id='archivematica:id:42',
         author={'name': 'HB'},
     )
@@ -82,15 +83,25 @@ if __name__ == '__main__':
 
     # Add content
     logger.info('About to add file %s to %s', args.content, entry_receipt.edit_media)
+    import urllib
     with open(args.content, 'r') as f:
+        headers = {
+            'Content-Type': str(mimetypes.guess_type(args.content)),
+            # 'Content-MD5': str(md5sum),
+            'Content-Length': str(os.path.getsize(args.content)),
+            'Content-Disposition': "attachment; filename=%s" % urllib.quote(os.path.basename(args.content)),
+        }
+
         content = f.read()
-        content_receipt = conn.add_file_to_resource(
-            edit_media_iri=entry_receipt.edit_media,
-            payload=content,
-            filename=os.path.basename(args.content),
-            mimetype=mimetypes.guess_type(args.content),
-        )
-    logger.info('Content Receipt: %s %s', content_receipt.code, content_receipt.content)
+        requests.post(entry_receipt.edit_media, headers=headers, data=content, auth=(args.user, args.passwd))
+
+        # content_receipt = conn.add_file_to_resource(
+        #     edit_media_iri=entry_receipt.edit_media,
+        #     payload=content,
+        #     filename=os.path.basename(args.content),
+        #     mimetype=mimetypes.guess_type(args.content),
+        # )
+    # logger.info('Content Receipt: %s %s', content_receipt.code, content_receipt.content)
 
     # Add metadata
     if args.metadata:
@@ -160,6 +171,6 @@ if __name__ == '__main__':
 
         logger.info('Bitstream policy URL %s', url)
         logger.info('Bistream body: %s', body)
-        response = requests.post(url, json=body)
+        response = requests.post(url, json=body, auth=(args.user, args.passwd))
         logger.info('response %s', response)
         logger.info('body %s', response.text)
